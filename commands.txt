@@ -1,0 +1,4 @@
+# Publish
+mosquitto_pub -h 10.10.11.62 -p 1883 t "test" -m "hello world" 
+# Subsribe
+mosquitto_sub -h 10.10.11.62 -p 1883  -t test
