@@ -1,0 +1,56 @@
+import os, sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+os.environ['DJANGO_SETTINGS_MODULE'] = 'demo.settings'
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+from mqttvmlog.models import MqttApiLog
+from beneficiary.models import *
+import ast
+
+
+def create_mqttlog(topic_type,topic_name,payload,case_number, is_publish, is_subscribe):
+	casesheet_obj = CaseSheet.objects.get(case_number=case_number)
+	print casesheet_obj
+
+	kwargs = {
+	"topic_type":topic_type,
+	"topic_name":topic_name,
+	"payload":payload,
+
+	"is_publish":is_publish,
+	"is_subscribe":is_subscribe,
+	"status":"true",
+	"vending_machine_code":casesheet_obj.subfacility_code,
+
+	"case_number":case_number,
+	"state_code":casesheet_obj.state_code,
+	"zone_code":casesheet_obj.zone_code,
+	"district_code":casesheet_obj.district_code,
+	"block_code":casesheet_obj.block_code,
+	"facility_type":casesheet_obj.facility_type,
+	"facility_code":casesheet_obj.facility_code,
+	"subfacility_code":casesheet_obj.subfacility_code
+
+	}
+
+	if topic_type == 'eSub-Dispense-Drugs-VM' and is_subscribe=="YES":
+		mqttlog_obj_list = MqttApiLog.objects.filter(case_number=case_number)
+		mqttlog_obj_list.update(**kwargs) 
+	else:
+		MqttApiLog.objects.create(**kwargs)
+	
+	print kwargs
+	if topic_type == 'DISPENSE-DRUGS':
+		print "DISPENSE-DRUGS"
+		kwargs.update({"is_publish":"YES"})
+		MqttApiLog.objects.create(**kwargs)
+	elif topic_type == 'ISSUED-DRUGS':
+		print "ISSUED-DRUGS"
+		kwargs.update({"is_subscribe":"YES"})
+		mqttlog_obj_list = MqttApiLog.objects.filter(case_number=case_number)
+		mqttlog_obj_list.update(**kwargs) 
+	else:
+		pass
+	
+# if __name__ == '__main__':
+# 	create_mqttlog('ISSUED-DRUGS','demo','{"request_time": 1552636253, "success": true}',2019021372)
